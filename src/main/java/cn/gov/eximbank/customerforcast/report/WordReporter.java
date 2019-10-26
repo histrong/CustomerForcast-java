@@ -1,11 +1,12 @@
 package cn.gov.eximbank.customerforcast.report;
 
 import cn.gov.eximbank.customerforcast.Application;
+import cn.gov.eximbank.customerforcast.analyzer.BranchAnalyzeResult;
 import cn.gov.eximbank.customerforcast.analyzer.GroupAnalyzeResult;
 import org.apache.poi.ooxml.POIXMLDocument;
 import org.apache.poi.xwpf.usermodel.*;
-import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTR;
-import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTRPr;
+import org.openxmlformats.schemas.drawingml.x2006.main.CTBlipFillProperties;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.*;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -50,8 +51,84 @@ public class WordReporter {
         return true;
     }
 
+    private void generateTable(XWPFDocument destDoc, XWPFTable table, GroupAnalyzeResult groupAnalyzeResult) {
+        CTTbl ctTbl = CTTbl.Factory.newInstance();
+        ctTbl.set(table.getCTTbl());
+        XWPFTable replacedTable = new XWPFTable(ctTbl, destDoc);
+
+        XWPFTableRow templateRow = table.getRow(1);
+        for (int i = 0; i != groupAnalyzeResult.getGroupBranchCount(); ++i) {
+            BranchAnalyzeResult branchAnalyzeResult = groupAnalyzeResult.getBranchAnalyzeResults().get(i);
+            if (i == 0) {
+                replaceSingleRow(replacedTable.getRow(1), branchAnalyzeResult.toVariableMap());
+            }
+            else {
+                CTRow ctRow = CTRow.Factory.newInstance();
+                ctRow.set(templateRow.getCtRow());
+                XWPFTableRow row = new XWPFTableRow(ctRow, replacedTable);
+                replaceSingleRow(row, branchAnalyzeResult.toVariableMap());
+                replacedTable.addRow(row);
+            }
+        }
+
+        setTableStyle(replacedTable);
+
+        destDoc.createTable();
+        int position = destDoc.getTables().size() - 1;
+        destDoc.setTable(position, replacedTable);
+    }
+
+    private void setTableStyle(XWPFTable table) {
+        String borderColor = "000000";
+        int borderSize = 2;
+        int borderSpace = 0;
+        table.setBottomBorder(XWPFTable.XWPFBorderType.SINGLE, borderSize, borderSpace, borderColor);
+        table.setTopBorder(XWPFTable.XWPFBorderType.SINGLE, borderSize, borderSpace, borderColor);
+        table.setLeftBorder(XWPFTable.XWPFBorderType.SINGLE, borderSize, borderSpace, borderColor);
+        table.setRightBorder(XWPFTable.XWPFBorderType.SINGLE, borderSize, borderSpace, borderColor);
+        table.setInsideHBorder(XWPFTable.XWPFBorderType.SINGLE, borderSize, borderSpace, borderColor);
+        table.setInsideVBorder(XWPFTable.XWPFBorderType.SINGLE, borderSize, borderSpace, borderColor);
+        table.setCellMargins(0, 110, 0, 110);
+    }
+
+    private void replaceTableContent(XWPFTable table, GroupAnalyzeResult groupAnalyzeResult) {
+        for (int i = 0; i != groupAnalyzeResult.getGroupBranchCount(); ++i) {
+            BranchAnalyzeResult branchAnalyzeResult = groupAnalyzeResult.getBranchAnalyzeResults().get(i);
+            replaceSingleRow(table.getRows().get(i + 1), branchAnalyzeResult.toVariableMap());
+        }
+    }
+
+    private void replaceSingleRow(XWPFTableRow row, Map<String, String> variableMap) {
+        for (int i = 0; i != row.getTableCells().size(); ++i) {
+            XWPFTableCell cell = row.getTableCells().get(i);
+            replaceSingleCell(cell, variableMap);
+        }
+    }
+
+    private void replaceSingleCell(XWPFTableCell cell, Map<String, String> variableMap) {
+        for (int i = 0; i != cell.getParagraphs().size(); ++i) {
+            XWPFParagraph paragraph = cell.getParagraphs().get(i);
+            try {
+                replaceParagraph(paragraph, variableMap);
+            } catch (Exception e) {
+                throw e;
+            }
+        }
+    }
+
     private void generateParagraph(XWPFDocument destDoc, XWPFParagraph paragraph, Map<String, String> variableMap) {
+        CTP ctParagraph = CTP.Factory.newInstance();
+        ctParagraph.set(paragraph.getCTP());
+        XWPFParagraph replacedParagraph = new XWPFParagraph(ctParagraph, destDoc);
+        replaceParagraph(replacedParagraph, variableMap);
+        destDoc.createParagraph();
+        int position = destDoc.getParagraphs().size() - 1;
+        destDoc.setParagraph(replacedParagraph, position);
+    }
+
+    private void replaceParagraph(XWPFParagraph paragraph, Map<String, String> variableMap) {
         Pattern variablePattern = Pattern.compile("\\{[a-zA-Z]+\\}");
+
         while (true) {
             String content = paragraph.getText();
             Matcher matcher = variablePattern.matcher(content);
@@ -66,10 +143,6 @@ public class WordReporter {
                 replaceSingleVariable(paragraph, startRunIndex, endRunIndex, variableMap);
             }
         }
-
-        destDoc.createParagraph();
-        int position = destDoc.getParagraphs().size() - 1;
-        destDoc.setParagraph(paragraph, position);
     }
 
     private void replaceSingleVariable(XWPFParagraph paragraph, int startRunIndex, int endRunIndex, Map<String, String> variableMap) {
@@ -182,15 +255,7 @@ public class WordReporter {
         destDoc.setParagraph(paragraph, pos);
     }
 
-    private void generateTable(XWPFDocument destDoc, XWPFTable table, GroupAnalyzeResult groupAnalyzeResult) {
-        XWPFTableRow templateRow = table.getRow(1);
-        XWPFTable replacedTable = destDoc.createTable();
-        replacedTable.addRow(table.getRow(0));
-        for (int i = 0; i != groupAnalyzeResult.getGroupBranchCount(); ++i) {
-            replacedTable.addRow(templateRow);
-        }
-        destDoc.setTable(0, replacedTable);
-    }
+
 
     private List<ETemplateVariable> getColumnVariables(XWPFTableRow templateRow) {
         List<ETemplateVariable> columnVariables = new ArrayList<>();

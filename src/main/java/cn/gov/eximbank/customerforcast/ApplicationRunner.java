@@ -11,8 +11,6 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.net.URLEncoder;
-import java.nio.charset.Charset;
 
 @Component
 public class ApplicationRunner implements CommandLineRunner {
@@ -31,7 +29,6 @@ public class ApplicationRunner implements CommandLineRunner {
     }
 
     private GroupAnalyzeResult analyzeGroup() throws IOException {
-        String charSet = Charset.defaultCharset().name();
         String groupName = new String("测试集团".getBytes("gbk"), "utf8");
         String branch1 = new String("公司部".getBytes("gbk"), "utf8");
         String branch2 = new String("北京分行".getBytes("gbk"), "utf8");
