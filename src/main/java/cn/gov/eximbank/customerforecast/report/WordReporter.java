@@ -1,8 +1,8 @@
 package cn.gov.eximbank.customerforecast.report;
 
 import cn.gov.eximbank.customerforecast.Application;
-import cn.gov.eximbank.customerforecast.analyzer.BranchAnalyzeResult;
-import cn.gov.eximbank.customerforecast.analyzer.GroupAnalyzeResult;
+import cn.gov.eximbank.customerforecast.model.GroupSnapshotInBranch;
+import cn.gov.eximbank.customerforecast.model.GroupSnapshot;
 import org.apache.poi.ooxml.POIXMLDocument;
 import org.apache.poi.xwpf.usermodel.*;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.*;
@@ -31,41 +31,41 @@ public class WordReporter {
         }
     }
 
-    public boolean generateReportDocument(GroupAnalyzeResult groupAnalyzeResult)
+    public boolean generateReportDocument(GroupSnapshot groupSnapshot)
             throws IOException {
         XWPFDocument destDoc = new XWPFDocument();
         for (IBodyElement bodyElement : templateDoc.getBodyElements()) {
             if (bodyElement.getElementType().equals(BodyElementType.PARAGRAPH)) {
                 XWPFParagraph paragraph = (XWPFParagraph) bodyElement;
-                generateParagraph(destDoc, paragraph, groupAnalyzeResult.toVariableMap());
+                generateParagraph(destDoc, paragraph, groupSnapshot.toVariableMap());
             }
             else if (bodyElement.getElementType().equals(BodyElementType.TABLE)) {
                 XWPFTable table = (XWPFTable) bodyElement;
-                generateTable(destDoc, table, groupAnalyzeResult);
+                generateTable(destDoc, table, groupSnapshot);
             }
         }
 
-        FileOutputStream out = new FileOutputStream(getOutFileFullName(groupAnalyzeResult.getGroupName(), ""));
+        FileOutputStream out = new FileOutputStream(getOutFileFullName(groupSnapshot.getGroupName(), ""));
         destDoc.write(out);
         return true;
     }
 
-    private void generateTable(XWPFDocument destDoc, XWPFTable table, GroupAnalyzeResult groupAnalyzeResult) {
+    private void generateTable(XWPFDocument destDoc, XWPFTable table, GroupSnapshot groupSnapshot) {
         CTTbl ctTbl = CTTbl.Factory.newInstance();
         ctTbl.set(table.getCTTbl());
         XWPFTable replacedTable = new XWPFTable(ctTbl, destDoc);
 
         XWPFTableRow templateRow = table.getRow(1);
-        for (int i = 0; i != groupAnalyzeResult.getGroupBranchCount(); ++i) {
-            BranchAnalyzeResult branchAnalyzeResult = groupAnalyzeResult.getBranchAnalyzeResults().get(i);
+        for (int i = 0; i != groupSnapshot.getGroupBranchCount(); ++i) {
+            GroupSnapshotInBranch groupSnapshotInBranch = groupSnapshot.getGroupSnapshotInBranches().get(i);
             if (i == 0) {
-                replaceSingleRow(replacedTable.getRow(1), branchAnalyzeResult.toVariableMap());
+                replaceSingleRow(replacedTable.getRow(1), groupSnapshotInBranch.toVariableMap());
             }
             else {
                 CTRow ctRow = CTRow.Factory.newInstance();
                 ctRow.set(templateRow.getCtRow());
                 XWPFTableRow row = new XWPFTableRow(ctRow, replacedTable);
-                replaceSingleRow(row, branchAnalyzeResult.toVariableMap());
+                replaceSingleRow(row, groupSnapshotInBranch.toVariableMap());
                 replacedTable.addRow(row);
             }
         }
@@ -90,10 +90,10 @@ public class WordReporter {
         table.setCellMargins(0, 110, 0, 110);
     }
 
-    private void replaceTableContent(XWPFTable table, GroupAnalyzeResult groupAnalyzeResult) {
-        for (int i = 0; i != groupAnalyzeResult.getGroupBranchCount(); ++i) {
-            BranchAnalyzeResult branchAnalyzeResult = groupAnalyzeResult.getBranchAnalyzeResults().get(i);
-            replaceSingleRow(table.getRows().get(i + 1), branchAnalyzeResult.toVariableMap());
+    private void replaceTableContent(XWPFTable table, GroupSnapshot groupSnapshot) {
+        for (int i = 0; i != groupSnapshot.getGroupBranchCount(); ++i) {
+            GroupSnapshotInBranch groupSnapshotInBranch = groupSnapshot.getGroupSnapshotInBranches().get(i);
+            replaceSingleRow(table.getRows().get(i + 1), groupSnapshotInBranch.toVariableMap());
         }
     }
 
@@ -247,9 +247,9 @@ public class WordReporter {
         }
     }
 
-    private void generateParagraph(XWPFDocument destDoc, XWPFParagraph paragraph, GroupAnalyzeResult groupAnalyzeResult) {
+    private void generateParagraph(XWPFDocument destDoc, XWPFParagraph paragraph, GroupSnapshot groupSnapshot) {
         destDoc.createParagraph();
-        replaceVariables(paragraph, groupAnalyzeResult);
+        replaceVariables(paragraph, groupSnapshot);
         int pos = destDoc.getParagraphs().size() - 1;
         destDoc.setParagraph(paragraph, pos);
     }
@@ -270,7 +270,7 @@ public class WordReporter {
         return outFileFullName;
     }
 
-    private void replaceVariables(XWPFParagraph paragraph, GroupAnalyzeResult groupAnalyzeResult) {
+    private void replaceVariables(XWPFParagraph paragraph, GroupSnapshot groupSnapshot) {
         String paragraphContent = paragraph.getText();
         Pattern variablePattern = Pattern.compile("\\{[a-zA-Z]+\\}");
         Matcher matcher = variablePattern.matcher(paragraphContent);
@@ -292,7 +292,7 @@ public class WordReporter {
                 for (int i = variableBeginRunIndex; i <= variableEndRunIndex; ++i) {
                     content += paragraph.getRuns().get(i);
                 }
-                String replacedContent = replaceSingleVariableContent(content, groupAnalyzeResult);
+                String replacedContent = replaceSingleVariableContent(content, groupSnapshot);
                 paragraph.getRuns().get(variableBeginRunIndex).setText(replacedContent, 0);
                 for (int i = variableBeginRunIndex + 1; i <= variableEndRunIndex; ++i) {
                     paragraph.removeRun(variableBeginRunIndex + 1);
@@ -312,7 +312,7 @@ public class WordReporter {
         return -1;
     }
 
-    private String replaceSingleVariableContent(String originContent, GroupAnalyzeResult groupAnalyzeResult) {
+    private String replaceSingleVariableContent(String originContent, GroupSnapshot groupSnapshot) {
         String replacedContent = originContent;
         int begin = originContent.indexOf(ETemplateVariable.VARIABLE_PREFIX);
         int end = originContent.indexOf(ETemplateVariable.VARIABLE_SUFFIX, begin);
@@ -322,29 +322,29 @@ public class WordReporter {
         else {
             String variableSign = originContent.substring(begin, end + 1);
             if (variableSign.equals(ETemplateVariable.GROUP_NAME.getVariableSign())) {
-                replacedContent = originContent.replace(variableSign, groupAnalyzeResult.getGroupName());
+                replacedContent = originContent.replace(variableSign, groupSnapshot.getGroupName());
             }
             else if (variableSign.equals(ETemplateVariable.GROUP_MEMBER_COUNT.getVariableSign())) {
-                replacedContent = originContent.replace(variableSign, String.valueOf(groupAnalyzeResult.getGroupMemberCount()));
+                replacedContent = originContent.replace(variableSign, String.valueOf(groupSnapshot.getGroupMemberCount()));
             }
             else if (variableSign.equals(ETemplateVariable.GROUP_BALANCE.getVariableSign())) {
                 replacedContent = originContent.replace(variableSign,
-                        formatBalance(groupAnalyzeResult.getGroupBalance()));
+                        formatBalance(groupSnapshot.getGroupBalance()));
             }
             else if (variableSign.equals(ETemplateVariable.GROUP_LOAN_BALANCE.getVariableSign())) {
                 replacedContent = originContent.replace(variableSign,
-                        formatBalance(groupAnalyzeResult.getGroupLoanBalance()));
+                        formatBalance(groupSnapshot.getGroupLoanBalance()));
             }
             else if (variableSign.equals(ETemplateVariable.GROUP_TRADE_IN_SHEET_BALANCE.getVariableSign())) {
                 replacedContent = originContent.replace(variableSign,
-                        formatBalance(groupAnalyzeResult.getGroupTradeInSheetBalance()));
+                        formatBalance(groupSnapshot.getGroupTradeInSheetBalance()));
             }
             else if (variableSign.equals(ETemplateVariable.GROUP_TRADE_OUT_SHEET_BALANCE.getVariableSign())) {
                 replacedContent = originContent.replace(variableSign,
-                        formatBalance(groupAnalyzeResult.getGroupTradeOutSheetBalance()));
+                        formatBalance(groupSnapshot.getGroupTradeOutSheetBalance()));
             }
             else if (variableSign.equals(ETemplateVariable.GROUP_BRANCH_COUNT.getVariableSign())) {
-                replacedContent = originContent.replace(variableSign, String.valueOf(groupAnalyzeResult.getGroupBranchCount()));
+                replacedContent = originContent.replace(variableSign, String.valueOf(groupSnapshot.getGroupBranchCount()));
             }
             return replacedContent;
         }
