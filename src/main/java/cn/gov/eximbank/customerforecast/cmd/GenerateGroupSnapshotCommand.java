@@ -22,6 +22,10 @@ public class GenerateGroupSnapshotCommand implements ICommand {
 
     private String period;
 
+    private Map<String, GroupSnapshot> groupSnapshotMap;
+
+    private Map<String, String> customerInGroupMap;
+
     public GenerateGroupSnapshotCommand(String period,
                                         GroupRepository groupRepository,
                                         CustomerRepository customerRepository,
@@ -32,6 +36,8 @@ public class GenerateGroupSnapshotCommand implements ICommand {
         this.customerRepository = customerRepository;
         this.businessRepository = businessRepository;
         this.groupSnapshotRepository = groupSnapshotRepository;
+        this.groupSnapshotMap = new HashMap<>();
+        this.customerInGroupMap = new HashMap<>();
     }
 
     @Override
@@ -44,12 +50,43 @@ public class GenerateGroupSnapshotCommand implements ICommand {
         //1. 清空所有的集团情况快照
         groupSnapshotRepository.deleteAll();
 
-        //2. 找到所有的集团列表
-        List<Group> groups = groupRepository.findAll();
+        //2. 找到所有子成员归属集团的映射
+        List<Customer> customers = customerRepository.findAll();
+        for (Customer customer : customers) {
+            if (customer.getGroupId() != null && customer.getGroupId() != "") {
+                customerInGroupMap.put(customer.getId(), customer.getGroupId());
+            }
+        }
 
-        //3. 遍历每个集团，生成快照
-        for (Group group : groups) {
-            generateGroupSnapshot(group);
+        //3. 针对每笔业务，放入对应的集团快照
+        List<Business> businesses = businessRepository.findAll();
+        for (Business business : businesses) {
+            String customerId = business.getCustomerId(period);
+            if (customerInGroupMap.containsKey(customerId)) {
+                recordBusiness(business);
+            }
+        }
+
+        //4. 处理所有的集团快照
+        for (String groupId : groupSnapshotMap.keySet()) {
+            GroupSnapshot groupSnapshot = groupSnapshotMap.get(groupId);
+            Collections.sort(groupSnapshot.getGroupSnapshotInBranches(), new Comparator<GroupSnapshotInBranch>() {
+                @Override
+                public int compare(GroupSnapshotInBranch gs1, GroupSnapshotInBranch gs2) {
+                    if (gs1.getBranchBalance() < gs2.getBranchBalance()) {
+                        return 1;
+                    }
+                    else if (gs1.getBranchBalance() == gs2.getBranchBalance()) {
+                        return 0;
+                    }
+                    else {
+                        return -1;
+                    }
+                }
+            });
+            groupSnapshot.calculateGroupBalances();
+
+            groupSnapshotRepository.save(groupSnapshot);
         }
     }
 
@@ -102,6 +139,42 @@ public class GenerateGroupSnapshotCommand implements ICommand {
         groupSnapshot.calculateGroupBalances();
 
         groupSnapshotRepository.save(groupSnapshot);
+    }
+
+    private void recordBusiness(Business business) {
+        String customerId = business.getCustomerId(period);
+        String groupId = customerInGroupMap.get(customerId);
+        Optional<Group> groupOptional = groupRepository.findById(groupId);
+        if (!groupOptional.isPresent()) {
+            return;
+        }
+        if (!groupSnapshotMap.containsKey(groupId)) {
+            Group group = groupOptional.get();
+            List<Customer> customers = customerRepository.findAllByGroupId(groupId);
+            GroupSnapshot groupSnapshot = new GroupSnapshot(groupId, group.getName(), customers.size());
+            groupSnapshotMap.put(groupId, groupSnapshot);
+        }
+        GroupSnapshot groupSnapshot = groupSnapshotMap.get(groupId);
+
+        String branchId = business.getBranchId(period);
+        double balance = business.getBalance(period);
+        GroupSnapshotInBranch groupSnapshotInBranch = null;
+        for (GroupSnapshotInBranch snapshotInBranch : groupSnapshot.getGroupSnapshotInBranches()) {
+            if (snapshotInBranch.getBranchId().equals(branchId)) {
+                groupSnapshotInBranch = snapshotInBranch;
+            }
+        }
+        if (groupSnapshotInBranch == null) {
+            EBranch branch = EBranch.valueOf(business.getBranchId(period));
+            groupSnapshotInBranch = new GroupSnapshotInBranch(branchId, branch.getBranchName());
+            groupSnapshot.getGroupSnapshotInBranches().add(groupSnapshotInBranch);
+        }
+
+        switch (business.getType()) {
+            case LN: groupSnapshotInBranch.addBranchLoanBalance(balance);break;
+            case TI: groupSnapshotInBranch.addBranchTradeInSheetBalance(balance);break;
+            case TO: groupSnapshotInBranch.addBranchTradeOutSheetBalance(balance);break;
+        }
     }
 
     private void recordBusiness(Business business, Map<String, GroupSnapshotInBranch> groupSnapshotInBranchMap) {

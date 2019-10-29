@@ -3,6 +3,7 @@ package cn.gov.eximbank.customerforecast;
 import cn.gov.eximbank.customerforecast.cmd.GenerateGroupSnapshotCommand;
 import cn.gov.eximbank.customerforecast.cmd.ImportCustomerCommand;
 import cn.gov.eximbank.customerforecast.cmd.ImportInSheetBusinessCommand;
+import cn.gov.eximbank.customerforecast.cmd.ImportOutSheetBusinessCommand;
 import cn.gov.eximbank.customerforecast.model.*;
 import cn.gov.eximbank.customerforecast.report.WordReporter;
 import cn.gov.eximbank.customerforecast.repository.BusinessRepository;
@@ -57,7 +58,10 @@ public class ApplicationRunner implements CommandLineRunner {
 //        importInSheetBusinessCommand.execute();
         GenerateGroupSnapshotCommand generateGroupSnapshotCommand = new GenerateGroupSnapshotCommand("201909",
                 groupRepository, customerRepository, businessRepository, groupSnapshotRepository);
-//        generateGroupSnapshotCommand.execute();
+        generateGroupSnapshotCommand.execute();
+
+        ImportOutSheetBusinessCommand importOutSheetBusinessCommand = new ImportOutSheetBusinessCommand("201909", businessRepository);
+//        importOutSheetBusinessCommand.execute();
         analyzeGroup();
     }
 
@@ -76,7 +80,7 @@ public class ApplicationRunner implements CommandLineRunner {
 //        groupSnapshotRepository.deleteAll();
 //        groupSnapshotRepository.save(groupSnapshot);
 //        return groupSnapshot;
-        Group group = groupRepository.findByName("海航集团有限公司");
+        Group group = groupRepository.findByName("中国电力建设集团有限公司");
         GroupSnapshot groupSnapshot = groupSnapshotRepository.findByGroupName(group.getName());
         WordReporter reporter = new WordReporter();
         reporter.loadTemplateFile();

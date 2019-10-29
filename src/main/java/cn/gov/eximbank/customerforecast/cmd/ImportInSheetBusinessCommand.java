@@ -36,7 +36,6 @@ public class ImportInSheetBusinessCommand implements ICommand {
 
     @Override
     public void execute() {
-        businessRepository.deleteAll();
         File inSheetBusinessFile = new File(importPath + File.separator + inSheetFileName);
         if (inSheetBusinessFile.exists()) {
             readInSheetBusinessFile(inSheetBusinessFile);
@@ -62,15 +61,15 @@ public class ImportInSheetBusinessCommand implements ICommand {
     private void readInSheetBusinessRow(Row row) {
         String businessId = CellContentUtil.getStringContent(row.getCell(2));
         String branchText = CellContentUtil.getStringContent(row.getCell(8));
-        String branchId = getBranchId(branchText);
+        String branchId = EBranch.getBranchId(branchText).name();
         if (branchId.equals(EBranch.NONE.name())) {
             logger.info(businessId + " : " + branchText + " cannot read");
         }
         double balance = CellContentUtil.getNumericContent(row.getCell(10));
         String customerId = CellContentUtil.getStringContent(row.getCell(49));
-        Optional<Business> businessOption = businessRepository.findById(businessId);
-        if (businessOption.isPresent()) {
-            Business business = businessOption.get();
+        Optional<Business> businessOptional = businessRepository.findById(businessId);
+        if (businessOptional.isPresent()) {
+            Business business = businessOptional.get();
             business.addBusinessDetail(period, customerId, branchId, balance);
             businessRepository.save(business);
         }
@@ -96,10 +95,5 @@ public class ImportInSheetBusinessCommand implements ICommand {
         else {
             return EBusinessType.NONE;
         }
-    }
-
-    private String getBranchId(String branchText) {
-        EBranch branch = EBranch.getBranchId(branchText);
-        return branch.name();
     }
 }
