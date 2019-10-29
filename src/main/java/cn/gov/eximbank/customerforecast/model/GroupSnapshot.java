@@ -25,17 +25,17 @@ public class GroupSnapshot {
 
     private List<GroupSnapshotInBranch> groupSnapshotInBranches;
 
-    public GroupSnapshot(String id, String groupName,
-                         int groupMemberCount,
-                         double groupLoanBalance,
-                         double groupTradeInSheetBalance,
-                         double groupTradeOutSheetBalance) {
+    public GroupSnapshot() {
+        this("", "", 0);
+    }
+
+    public GroupSnapshot(String id, String groupName, int groupMemberCount) {
         this.id = id;
         this.groupName = groupName;
         this.groupMemberCount = groupMemberCount;
-        this.groupLoanBalance = groupLoanBalance;
-        this.groupTradeInSheetBalance = groupTradeInSheetBalance;
-        this.groupTradeOutSheetBalance = groupTradeOutSheetBalance;
+        this.groupLoanBalance = 0;
+        this.groupTradeInSheetBalance = 0;
+        this.groupTradeOutSheetBalance = 0;
         groupSnapshotInBranches = new ArrayList<>();
     }
 
@@ -77,6 +77,18 @@ public class GroupSnapshot {
 
     public void addGroupSnapshotInBranch(GroupSnapshotInBranch groupSnapshotInBranch) {
         this.groupSnapshotInBranches.add(groupSnapshotInBranch);
+    }
+
+    public void addGroupSnapshotInBranches(List<GroupSnapshotInBranch> groupSnapshotInBranches) {
+        this.groupSnapshotInBranches.addAll(groupSnapshotInBranches);
+    }
+
+    public void calculateGroupBalances() {
+        for (GroupSnapshotInBranch groupSnapshotInBranch : groupSnapshotInBranches) {
+            groupLoanBalance += groupSnapshotInBranch.getBranchLoanBalance();
+            groupTradeInSheetBalance += groupSnapshotInBranch.getBranchTradeInSheetBalance();
+            groupTradeOutSheetBalance += groupSnapshotInBranch.getBranchTradeOutSheetBalance();
+        }
     }
 
     public Map<String, String> toVariableMap() {

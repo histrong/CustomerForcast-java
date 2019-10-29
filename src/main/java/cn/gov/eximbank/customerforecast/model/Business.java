@@ -30,13 +30,24 @@ public class Business {
 
     private List<BusinessDetail> businessDetails;
 
-    public Business(String id) {
+    private String type;
+
+    public Business() {
+        businessDetails = new ArrayList<>();
+    }
+
+    public Business(String id, EBusinessType type) {
         this.id = id;
+        this.type = type.name();
         this.businessDetails = new ArrayList<>();
     }
 
     public String getId() {
         return id;
+    }
+
+    public EBusinessType getType() {
+        return EBusinessType.valueOf(type);
     }
 
     public String getCustomerId(String period) {

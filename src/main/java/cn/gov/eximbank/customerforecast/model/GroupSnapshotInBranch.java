@@ -17,6 +17,14 @@ public class GroupSnapshotInBranch {
 
     private double branchTradeOutSheetBalance;
 
+    public GroupSnapshotInBranch() {
+        this("", "");
+    }
+
+    public GroupSnapshotInBranch(String branchId, String branchName) {
+        this(branchId, branchName, 0, 0, 0);
+    }
+
     public GroupSnapshotInBranch(String branchId,
                                  String branchName,
                                  double branchLoanBalance,
@@ -31,6 +39,18 @@ public class GroupSnapshotInBranch {
 
     public String getBranchId() {
         return branchId;
+    }
+
+    public void addBranchLoanBalance(double branchLoanBalance) {
+        this.branchLoanBalance += branchLoanBalance;
+    }
+
+    public void addBranchTradeInSheetBalance(double branchTradeInSheetBalance) {
+        this.branchTradeInSheetBalance += branchTradeInSheetBalance;
+    }
+
+    public void addBranchTradeOutSheetBalance(double branchTradeOutSheetBalance) {
+        this.branchTradeOutSheetBalance += branchTradeOutSheetBalance;
     }
 
     public String getBranchName() {
