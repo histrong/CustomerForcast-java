@@ -4,7 +4,8 @@ public enum EBusinessType {
 
     LN("贷款"),
     TI("表内贸金"),
-    TO("表外贸金");
+    TO("表外贸金"),
+    NONE("NONE");
 
     private String businessType;
 

@@ -45,7 +45,7 @@ public class WordReporter {
             }
         }
 
-        FileOutputStream out = new FileOutputStream(getOutFileFullName(groupSnapshot.getGroupName(), ""));
+        FileOutputStream out = new FileOutputStream(getOutFileFullName(groupSnapshot.getGroupName(), "report/"));
         destDoc.write(out);
         return true;
     }
@@ -131,11 +131,11 @@ public class WordReporter {
         while (true) {
             String content = paragraph.getText();
             Matcher matcher = variablePattern.matcher(content);
-            // Èç¹ûÕÒ²»µ½Æ¥ÅäµÄ±äÁ¿£¬ÔòÍË³öÑ­»·
+            // å¦‚æœæ‰¾ä¸åˆ°åŒ¹é…çš„å˜é‡ï¼Œåˆ™é€€å‡ºå¾ªç¯
             if (!matcher.find()) {
                 break;
             }
-            // Èç¹ûÕÒµ½ÁËÆ¥ÅäµÄ±äÁ¿£¬¿ªÊ¼½øĞĞÌæ»»
+            // å¦‚æœæ‰¾åˆ°äº†åŒ¹é…çš„å˜é‡ï¼Œå¼€å§‹è¿›è¡Œæ›¿æ¢
             else {
                 int startRunIndex = paragraph.searchText(ETemplateVariable.VARIABLE_PREFIX, new PositionInParagraph()).getBeginRun();
                 int endRunIndex = paragraph.searchText(ETemplateVariable.VARIABLE_SUFFIX, new PositionInParagraph()).getEndRun();
@@ -158,25 +158,25 @@ public class WordReporter {
 
     private String getVariableSign(XWPFParagraph paragraph, int startRunIndex, int endRunIndex) {
         StringBuilder variableSign = new StringBuilder();
-        // Èç¹ûÔÚÍ¬Ò»¸örunÄÚ»ñµÃvariable
+        // å¦‚æœåœ¨åŒä¸€ä¸ªrunå†…è·å¾—variable
         if (startRunIndex == endRunIndex) {
             String runContent = paragraph.getRuns().get(startRunIndex).text();
             int variableStartIndex = runContent.indexOf(ETemplateVariable.VARIABLE_PREFIX);
             int variableEndIndex = runContent.indexOf(ETemplateVariable.VARIABLE_SUFFIX);
             variableSign = new StringBuilder(runContent.substring(variableStartIndex + 1, variableEndIndex));
         }
-        // Èç¹ûÔÚ¶à¸örunÄÚ
+        // å¦‚æœåœ¨å¤šä¸ªrunå†…
         else {
-            //1. »ñµÃstartRunµÄ{ºóµÄÄÚÈİ
+            //1. è·å¾—startRunçš„{åçš„å†…å®¹
             String startRunContent = paragraph.getRuns().get(startRunIndex).text();
             int variableStartIndex = startRunContent.indexOf("{");
             variableSign.append(startRunContent.substring(variableStartIndex + 1));
-            //2. Ìí¼ÓstartRunºÍendRunÖ®¼äµÄÄÚÈİ
+            //2. æ·»åŠ startRunå’ŒendRunä¹‹é—´çš„å†…å®¹
             for (int i = startRunIndex + 1; i != endRunIndex; ++i) {
                 String currentRunContent = paragraph.getRuns().get(i).text();
                 variableSign.append(currentRunContent);
             }
-            //3. Ìí¼ÓendRunµÄ}Ç°µÄÄÚÈİ
+            //3. æ·»åŠ endRunçš„}å‰çš„å†…å®¹
             String endRunContent = paragraph.getRuns().get(endRunIndex).text();
             int variableEndIndex = endRunContent.indexOf("}");
             variableSign.append(endRunContent.substring(0, variableEndIndex));
@@ -214,7 +214,7 @@ public class WordReporter {
         XWPFRun originEndRun = paragraph.getRuns().get(endRunIndex);
 
         int insertRunIndex = startRunIndex;
-        // Èç¹ûÔ­startRunÄÚÓĞ{Ö®ÍâµÄÄÚÈİ£¬²åÈëĞÂµÄstartRun
+        // å¦‚æœåŸstartRunå†…æœ‰{ä¹‹å¤–çš„å†…å®¹ï¼Œæ’å…¥æ–°çš„startRun
         if (!originStartRun.text().equals(ETemplateVariable.VARIABLE_PREFIX)) {
             String originStartRunContent = originStartRun.text();
             int variableStartIndex = originStartRunContent.indexOf(ETemplateVariable.VARIABLE_PREFIX);
@@ -225,13 +225,13 @@ public class WordReporter {
             ++insertRunIndex;
         }
 
-        // ²åÈëĞÂµÄvariableRun
+        // æ’å…¥æ–°çš„variableRun
         XWPFRun variableRun = paragraph.insertNewRun(insertRunIndex);
         variableRun.setText(variableValue);
         variableRun.getCTR().setRPr(variableCTR);
         ++insertRunIndex;
 
-        // Èç¹ûÔ­endRunÄÚÓĞ}Ö®ÍâµÄÄÚÈİ£¬²åÈëĞÂµÄstartRun
+        // å¦‚æœåŸendRunå†…æœ‰}ä¹‹å¤–çš„å†…å®¹ï¼Œæ’å…¥æ–°çš„startRun
         if (!originEndRun.text().equals(ETemplateVariable.VARIABLE_SUFFIX)) {
             String originEndRunContent = originEndRun.text();
             int variableEndIndex = originEndRunContent.indexOf(ETemplateVariable.VARIABLE_SUFFIX);

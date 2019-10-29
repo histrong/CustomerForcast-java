@@ -1,6 +1,8 @@
 package cn.gov.eximbank.customerforecast;
 
 import cn.gov.eximbank.customerforecast.cmd.GenerateGroupSnapshotCommand;
+import cn.gov.eximbank.customerforecast.cmd.ImportCustomerCommand;
+import cn.gov.eximbank.customerforecast.cmd.ImportInSheetBusinessCommand;
 import cn.gov.eximbank.customerforecast.model.*;
 import cn.gov.eximbank.customerforecast.report.WordReporter;
 import cn.gov.eximbank.customerforecast.repository.BusinessRepository;
@@ -42,11 +44,20 @@ public class ApplicationRunner implements CommandLineRunner {
 //        Business business1 = businessRepository.findById("123").get();
 //        System.out.println(business1.getCustomerId("201908"));
 //        analyzeGroup();
-        testGenerateCustomers();
-        testGenerateBusiness();
-        GenerateGroupSnapshotCommand cmd = new GenerateGroupSnapshotCommand("201909", groupRepository,
-                customerRepository, businessRepository, groupSnapshotRepository);
-        cmd.execute();
+//        testGenerateCustomers();
+//        testGenerateBusiness();
+//        GenerateGroupSnapshotCommand cmd = new GenerateGroupSnapshotCommand("201909", groupRepository,
+//                customerRepository, businessRepository, groupSnapshotRepository);
+//        cmd.execute();
+//        analyzeGroup();
+        ImportCustomerCommand importCustomerCommand = new ImportCustomerCommand(groupRepository, customerRepository);
+//        customerImporter.importCustomers();
+
+        ImportInSheetBusinessCommand importInSheetBusinessCommand = new ImportInSheetBusinessCommand("201909", businessRepository);
+//        importInSheetBusinessCommand.execute();
+        GenerateGroupSnapshotCommand generateGroupSnapshotCommand = new GenerateGroupSnapshotCommand("201909",
+                groupRepository, customerRepository, businessRepository, groupSnapshotRepository);
+//        generateGroupSnapshotCommand.execute();
         analyzeGroup();
     }
 
@@ -65,12 +76,11 @@ public class ApplicationRunner implements CommandLineRunner {
 //        groupSnapshotRepository.deleteAll();
 //        groupSnapshotRepository.save(groupSnapshot);
 //        return groupSnapshot;
-        Optional<GroupSnapshot> groupRepositoryOption = groupSnapshotRepository.findById("JTKH1");
-        if (groupRepositoryOption.isPresent()) {
-            WordReporter reporter = new WordReporter();
-            reporter.loadTemplateFile();
-            reporter.generateReportDocument(groupRepositoryOption.get());
-        }
+        Group group = groupRepository.findByName("海航集团有限公司");
+        GroupSnapshot groupSnapshot = groupSnapshotRepository.findByGroupName(group.getName());
+        WordReporter reporter = new WordReporter();
+        reporter.loadTemplateFile();
+        reporter.generateReportDocument(groupSnapshot);
     }
 
     public void testGenerateCustomers() {

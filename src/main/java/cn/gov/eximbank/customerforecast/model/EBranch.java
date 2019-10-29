@@ -5,6 +5,7 @@ public enum EBranch {
     JY("交通运输融资部", "交通"),
     ZQ("主权客户部", "主权"),
     ZD("转贷部", "转贷"),
+    TZ("投资管理部", "投资"),
     BJ("北京分行", "北京"),
     SH("上海分行", "上海"),
     SZ("深圳分行", "深圳"),
@@ -37,6 +38,7 @@ public enum EBranch {
     GX("广西壮族自治区分行", "广西"),
     GZ("贵州省分行", "贵州"),
     KS("喀什分行", "喀什"),
+    BL("巴黎分行", "巴黎"),
     NONE("NONE", "NONE");
 
     private String branchName;
