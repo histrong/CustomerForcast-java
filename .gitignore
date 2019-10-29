@@ -33,4 +33,4 @@ gradlew.bat
 !src/main/resources/ReportTemplate.docx
 
 import/
-export/
+report/
