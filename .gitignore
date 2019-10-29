@@ -31,3 +31,6 @@ gradlew
 gradlew.bat
 *.docx
 !src/main/resources/ReportTemplate.docx
+
+import/
+export/
