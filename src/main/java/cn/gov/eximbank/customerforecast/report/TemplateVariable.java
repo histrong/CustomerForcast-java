@@ -1,4 +1,4 @@
-package cn.gov.eximbank.customerforcast.report;
+package cn.gov.eximbank.customerforecast.report;
 
 public class TemplateVariable {
 

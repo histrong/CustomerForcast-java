@@ -1,11 +1,13 @@
-package cn.gov.eximbank.customerforcast.analyzer;
+package cn.gov.eximbank.customerforecast.model;
 
-import cn.gov.eximbank.customerforcast.report.ETemplateVariable;
+import cn.gov.eximbank.customerforecast.report.ETemplateVariable;
 
 import java.util.HashMap;
 import java.util.Map;
 
-public class BranchAnalyzeResult {
+public class GroupSnapshotInBranch {
+
+    private String branchId;
 
     private String branchName;
 
@@ -15,14 +17,40 @@ public class BranchAnalyzeResult {
 
     private double branchTradeOutSheetBalance;
 
-    public BranchAnalyzeResult(String branchName,
-                               double branchLoanBalance,
-                               double branchTradeInSheetBalance,
-                               double branchTradeOutSheetBalance) {
+    public GroupSnapshotInBranch() {
+        this("", "");
+    }
+
+    public GroupSnapshotInBranch(String branchId, String branchName) {
+        this(branchId, branchName, 0, 0, 0);
+    }
+
+    public GroupSnapshotInBranch(String branchId,
+                                 String branchName,
+                                 double branchLoanBalance,
+                                 double branchTradeInSheetBalance,
+                                 double branchTradeOutSheetBalance) {
+        this.branchId = branchId;
         this.branchName = branchName;
         this.branchLoanBalance = branchLoanBalance;
         this.branchTradeInSheetBalance = branchTradeInSheetBalance;
         this.branchTradeOutSheetBalance = branchTradeOutSheetBalance;
+    }
+
+    public String getBranchId() {
+        return branchId;
+    }
+
+    public void addBranchLoanBalance(double branchLoanBalance) {
+        this.branchLoanBalance += branchLoanBalance;
+    }
+
+    public void addBranchTradeInSheetBalance(double branchTradeInSheetBalance) {
+        this.branchTradeInSheetBalance += branchTradeInSheetBalance;
+    }
+
+    public void addBranchTradeOutSheetBalance(double branchTradeOutSheetBalance) {
+        this.branchTradeOutSheetBalance += branchTradeOutSheetBalance;
     }
 
     public String getBranchName() {

@@ -1,4 +1,4 @@
-package cn.gov.eximbank.customerforcast;
+package cn.gov.eximbank.customerforecast;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

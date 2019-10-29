@@ -1,13 +1,17 @@
-package cn.gov.eximbank.customerforcast.analyzer;
+package cn.gov.eximbank.customerforecast.model;
 
-import cn.gov.eximbank.customerforcast.report.ETemplateVariable;
+import cn.gov.eximbank.customerforecast.report.ETemplateVariable;
+import org.springframework.data.annotation.Id;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class GroupAnalyzeResult {
+public class GroupSnapshot {
+
+    @Id
+    private String id;
 
     private String groupName;
 
@@ -19,18 +23,24 @@ public class GroupAnalyzeResult {
 
     private double groupTradeOutSheetBalance;
 
-    private List<BranchAnalyzeResult> branchAnalyzeResults;
+    private List<GroupSnapshotInBranch> groupSnapshotInBranches;
 
-    public GroupAnalyzeResult(String groupName, int groupMemberCount,
-                              double groupLoanBalance,
-                              double groupTradeInSheetBalance,
-                              double groupTradeOutSheetBalance) {
+    public GroupSnapshot() {
+        this("", "", 0);
+    }
+
+    public GroupSnapshot(String id, String groupName, int groupMemberCount) {
+        this.id = id;
         this.groupName = groupName;
         this.groupMemberCount = groupMemberCount;
-        this.groupLoanBalance = groupLoanBalance;
-        this.groupTradeInSheetBalance = groupTradeInSheetBalance;
-        this.groupTradeOutSheetBalance = groupTradeOutSheetBalance;
-        branchAnalyzeResults = new ArrayList<>();
+        this.groupLoanBalance = 0;
+        this.groupTradeInSheetBalance = 0;
+        this.groupTradeOutSheetBalance = 0;
+        groupSnapshotInBranches = new ArrayList<>();
+    }
+
+    public String getId() {
+        return id;
     }
 
     public String getGroupName() {
@@ -42,7 +52,7 @@ public class GroupAnalyzeResult {
     }
 
     public int getGroupBranchCount() {
-        return branchAnalyzeResults.size();
+        return groupSnapshotInBranches.size();
     }
 
     public double getGroupBalance() {
@@ -61,12 +71,24 @@ public class GroupAnalyzeResult {
         return groupTradeOutSheetBalance;
     }
 
-    public List<BranchAnalyzeResult> getBranchAnalyzeResults() {
-        return branchAnalyzeResults;
+    public List<GroupSnapshotInBranch> getGroupSnapshotInBranches() {
+        return groupSnapshotInBranches;
     }
 
-    public void addBranchAnalyzeResult(BranchAnalyzeResult branchAnalyzeResult) {
-        this.branchAnalyzeResults.add(branchAnalyzeResult);
+    public void addGroupSnapshotInBranch(GroupSnapshotInBranch groupSnapshotInBranch) {
+        this.groupSnapshotInBranches.add(groupSnapshotInBranch);
+    }
+
+    public void addGroupSnapshotInBranches(List<GroupSnapshotInBranch> groupSnapshotInBranches) {
+        this.groupSnapshotInBranches.addAll(groupSnapshotInBranches);
+    }
+
+    public void calculateGroupBalances() {
+        for (GroupSnapshotInBranch groupSnapshotInBranch : groupSnapshotInBranches) {
+            groupLoanBalance += groupSnapshotInBranch.getBranchLoanBalance();
+            groupTradeInSheetBalance += groupSnapshotInBranch.getBranchTradeInSheetBalance();
+            groupTradeOutSheetBalance += groupSnapshotInBranch.getBranchTradeOutSheetBalance();
+        }
     }
 
     public Map<String, String> toVariableMap() {

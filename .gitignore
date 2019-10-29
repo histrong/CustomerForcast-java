@@ -29,3 +29,5 @@ build/
 gradle/
 gradlew
 gradlew.bat
+*.docx
+!src/main/resources/ReportTemplate.docx
